@@ -18,6 +18,7 @@ class AnalysisRequest extends FormRequest
         return [
             'campaign_id' => ['required', 'integer', 'exists:campaigns,id'],
             'focus' => ['nullable', 'string', 'max:255'],
+            'model' => ['nullable', 'string', 'max:120'],
         ];
     }
 }

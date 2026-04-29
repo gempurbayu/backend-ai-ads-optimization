@@ -1,6 +1,6 @@
 # AI Ads Optimization Advisor API (Laravel)
 
-Backend service for campaign management, metrics, and AI analysis history.
+Backend service for campaign management, metrics, AI analysis generation, and per-user LLM configuration.
 
 ## Stack
 - Laravel 13
@@ -23,6 +23,14 @@ DB_PORT=6543
 DB_DATABASE=postgres
 DB_USERNAME=postgres.sibegnubsoemgggykdcd
 DB_PASSWORD=YOUR_REAL_PASSWORD
+```
+
+Global fallback LLM config (optional):
+```env
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=sk-xxxxx
+LLM_DEFAULT_MODEL=gpt-4o-mini
+LLM_TIMEOUT=30
 ```
 
 Run migrations:
@@ -59,20 +67,35 @@ Use Bearer token from login/register response.
 - `GET /api/analyses/{analysis}`
 - `DELETE /api/analyses/{analysis}`
 
-## Sample Campaign Payload
+`POST /api/analyses` payload:
 ```json
 {
-  "name": "Q2 Retargeting",
-  "platform": "Facebook",
-  "impressions": 120000,
-  "clicks": 2800,
-  "conversions": 140,
-  "cost": 18000000,
-  "revenue": 42000000,
-  "date_start": "2026-04-01",
-  "date_end": "2026-04-30"
+  "campaign_id": 1,
+  "focus": "turunkan CPA",
+  "model": "gpt-4o-mini"
 }
 ```
+
+### LLM Settings (auth)
+- `GET /api/settings/llm`
+- `PUT /api/settings/llm`
+
+`PUT /api/settings/llm` payload:
+```json
+{
+  "provider": "openai_compatible",
+  "api_key": "sk-xxxxx",
+  "base_url": "https://api.openai.com/v1",
+  "default_model": "gpt-4o-mini",
+  "timeout": 30
+}
+```
+
+## LLM Resolution Priority
+When analysis is generated, backend resolves config in this order:
+1. User-specific encrypted settings from `user_llm_settings`
+2. Global fallback from `.env` (`LLM_*`)
+3. Heuristic fallback when provider call fails
 
 ## Swagger
 Generate docs:
@@ -83,4 +106,17 @@ php artisan l5-swagger:generate
 Default UI:
 - `/api/documentation`
 
-> Note: Controllers are implemented and ready. Add OpenAPI annotations on controllers for richer schema output if needed.
+## Frontend Integration
+Frontend (`clean-react-hub`) expects:
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8000/api
+```
+
+Auth flow:
+1. Frontend calls `/auth/register` or `/auth/login`
+2. Backend returns token + user
+3. Frontend stores token in `localStorage` key `ada_token`
+4. Protected requests send `Authorization: Bearer <token>`
+
+## CORS
+If frontend runs on Vite default port (`5173`), ensure backend CORS allows origin `http://127.0.0.1:5173` (and/or `http://localhost:5173`).

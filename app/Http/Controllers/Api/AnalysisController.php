@@ -9,6 +9,7 @@ use App\Models\Campaign;
 use App\Services\AiAnalysisService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class AnalysisController extends Controller
 {
@@ -34,10 +35,17 @@ class AnalysisController extends Controller
             ->where('user_id', $request->user()->id)
             ->firstOrFail();
 
-        $generated = $this->aiAnalysisService->generate(
-            campaign: $campaign,
-            focus: $request->input('focus')
-        );
+        try {
+            $generated = $this->aiAnalysisService->generate(
+                campaign: $campaign,
+                focus: $request->input('focus'),
+                model: $request->input('model')
+            );
+        } catch (RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         $analysis = Analysis::query()->create([
             'user_id' => $request->user()->id,

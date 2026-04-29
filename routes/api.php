@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AnalysisController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CampaignController;
+use App\Http\Controllers\Api\LlmSettingController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -23,4 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('analyses', [AnalysisController::class, 'store']);
     Route::get('analyses/{analysis}', [AnalysisController::class, 'show']);
     Route::delete('analyses/{analysis}', [AnalysisController::class, 'destroy']);
+
+    Route::get('settings/llm', [LlmSettingController::class, 'show']);
+    Route::put('settings/llm', [LlmSettingController::class, 'upsert']);
+    Route::get('settings/llm/models', [LlmSettingController::class, 'models']);
 });

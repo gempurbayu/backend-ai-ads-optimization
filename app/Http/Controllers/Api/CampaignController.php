@@ -8,6 +8,7 @@ use App\Models\Campaign;
 use App\Services\MetricsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CampaignController extends Controller
 {
@@ -27,8 +28,23 @@ class CampaignController extends Controller
 
     public function store(CampaignRequest $request): JsonResponse
     {
+        $data = $request->validated();
+        $exists = Campaign::query()
+            ->where('user_id', $request->user()->id)
+            ->where('name', $data['name'])
+            ->where('platform', $data['platform'])
+            ->whereDate('date_start', $data['date_start'])
+            ->whereDate('date_end', $data['date_end'])
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'campaign' => ['Duplicate campaign detected: same name, platform, and date range already exists.'],
+            ]);
+        }
+
         $campaign = Campaign::query()->create([
-            ...$request->validated(),
+            ...$data,
             'user_id' => $request->user()->id,
         ]);
 
@@ -50,16 +66,60 @@ class CampaignController extends Controller
             'campaigns.*.date_end' => ['required', 'date', 'after_or_equal:campaigns.*.date_start'],
         ]);
 
-        $payload = collect($validated['campaigns'])->map(fn (array $row) => [
-            ...$row,
-            'user_id' => $request->user()->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ])->all();
+        $rows = collect($validated['campaigns'])->values();
 
-        Campaign::query()->insert($payload);
+        $existingKeys = Campaign::query()
+            ->where('user_id', $request->user()->id)
+            ->get(['name', 'platform', 'date_start', 'date_end'])
+            ->map(fn ($c) => strtolower(trim($c->name)).'|'.$c->platform.'|'.substr((string) $c->date_start, 0, 10).'|'.substr((string) $c->date_end, 0, 10))
+            ->flip();
 
-        return response()->json(['message' => 'Bulk upload success'], 201);
+        $seenInCsv = collect();
+        $insertRows = [];
+        $skipped = [];
+
+        foreach ($rows as $idx => $row) {
+            $key = strtolower(trim($row['name'])).'|'.$row['platform'].'|'.$row['date_start'].'|'.$row['date_end'];
+            $label = $row['name'].' ('.$row['platform'].', '.$row['date_start'].' → '.$row['date_end'].')';
+
+            if ($seenInCsv->has($key)) {
+                $skipped[] = [
+                    'index' => $idx + 1,
+                    'campaign' => $label,
+                    'reason' => 'duplicate_in_csv',
+                ];
+                continue;
+            }
+
+            $seenInCsv->put($key, true);
+
+            if ($existingKeys->has($key)) {
+                $skipped[] = [
+                    'index' => $idx + 1,
+                    'campaign' => $label,
+                    'reason' => 'duplicate_in_database',
+                ];
+                continue;
+            }
+
+            $insertRows[] = [
+                ...$row,
+                'user_id' => $request->user()->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (!empty($insertRows)) {
+            Campaign::query()->insert($insertRows);
+        }
+
+        return response()->json([
+            'message' => 'Bulk upload processed',
+            'inserted_count' => count($insertRows),
+            'skipped_count' => count($skipped),
+            'skipped' => $skipped,
+        ], 201);
     }
 
     public function show(Request $request, Campaign $campaign): JsonResponse

@@ -27,5 +27,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('settings/llm', [LlmSettingController::class, 'show']);
     Route::put('settings/llm', [LlmSettingController::class, 'upsert']);
+    Route::post('settings/llm/key', [LlmSettingController::class, 'saveKey']);
     Route::get('settings/llm/models', [LlmSettingController::class, 'models']);
 });

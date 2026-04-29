@@ -19,6 +19,8 @@ class AiAnalysisService
         $selectedModel = $model ?: ($userSetting?->default_model ?: config('services.llm.default_model'));
         $baseUrl = $userSetting?->base_url ?: config('services.llm.base_url');
         $timeout = $userSetting?->timeout ?: (int) config('services.llm.timeout', 30);
+        // Keep outbound timeout below PHP max_execution_time (commonly 30s)
+        $requestTimeout = max(5, min($timeout, 20));
 
         $apiKey = null;
         if ($userSetting?->api_key_encrypted) {
@@ -32,7 +34,7 @@ class AiAnalysisService
         $apiKey = $apiKey ?: config('services.llm.api_key');
 
         if ($apiKey) {
-            $llm = $this->generateFromLlm($campaign, $metrics, $focus, $selectedModel, $baseUrl, $apiKey, $timeout);
+            $llm = $this->generateFromLlm($campaign, $metrics, $focus, $selectedModel, $baseUrl, $apiKey, $requestTimeout);
             if ($llm !== null) {
                 return [
                     ...$llm,
@@ -52,7 +54,7 @@ class AiAnalysisService
         $fallback = $this->generateHeuristic($campaign, $metrics, $focus);
         $fallback['meta']['model'] = $selectedModel;
         $fallback['meta']['provider'] = 'heuristic_fallback';
-        $fallback['meta']['llm_debug'] = $this->buildDebugMeta($apiKey, $baseUrl, $selectedModel, $timeout);
+        $fallback['meta']['llm_debug'] = $this->buildDebugMeta($apiKey, $baseUrl, $selectedModel, $requestTimeout);
 
         return $fallback;
     }
@@ -73,24 +75,53 @@ class AiAnalysisService
             ],
             'metrics' => $metrics,
             'focus' => $focus,
+            'analysis_requirements' => [
+                'language' => 'English only',
+                'depth' => 'senior-level, specific, no generic advice',
+                'minimum_items' => [
+                    'underperforming_signals' => 4,
+                    'optimization_suggestions' => 6,
+                    'prioritized_action_items' => 5,
+                ],
+                'action_item_rules' => 'Each action item must include: what to change, why, expected impact, and KPI target.',
+                'optimization_coverage' => [
+                    'budget_allocation',
+                    'audience_targeting',
+                    'creative_testing',
+                    'bidding_strategy',
+                    'landing_page_or_funnel',
+                    'measurement_or_tracking',
+                ],
+            ],
             'output_format' => [
-                'summary' => 'string',
+                'summary' => 'string (5-8 sentences, include diagnosis + opportunity + strategy direction)',
                 'underperforming_signals' => 'string[]',
                 'optimization_suggestions' => 'string[]',
                 'prioritized_action_items' => 'string[]',
             ],
         ];
 
-        $response = Http::timeout($timeout)
-            ->withToken($apiKey)
-            ->post(rtrim($baseUrl, '/').'/chat/completions', [
+        try {
+            $response = Http::timeout($timeout)
+                ->connectTimeout(min(8, $timeout))
+                ->withToken($apiKey)
+                ->post(rtrim($baseUrl, '/').'/chat/completions', [
+                    'model' => $model,
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are a senior performance marketing analyst. Respond in English only. Return valid JSON only with keys: summary, underperforming_signals, optimization_suggestions, prioritized_action_items. Be concrete and data-driven. Avoid generic recommendations.'],
+                        ['role' => 'user', 'content' => json_encode($prompt, JSON_UNESCAPED_UNICODE)],
+                    ],
+                    'temperature' => 0.25,
+                ]);
+        } catch (\Throwable $e) {
+            Log::warning('LLM request transport failed', [
+                'error' => $e->getMessage(),
+                'base_url' => $baseUrl,
                 'model' => $model,
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are a senior performance marketing analyst. Respond in English only. Return valid JSON only with keys: summary, underperforming_signals, optimization_suggestions, prioritized_action_items.'],
-                    ['role' => 'user', 'content' => json_encode($prompt, JSON_UNESCAPED_UNICODE)],
-                ],
-                'temperature' => 0.3,
+                'timeout' => $timeout,
             ]);
+            throw new RuntimeException('LLM request timed out or failed to connect. Please retry or lower timeout in Settings.');
+        }
 
         if (!$response->successful()) {
             $bodyJson = $response->json();

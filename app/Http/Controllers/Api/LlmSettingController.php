@@ -39,11 +39,15 @@ class LlmSettingController extends Controller
     {
         $data = $request->validated();
 
+        $existing = UserLlmSetting::query()->where('user_id', $request->user()->id)->first();
+
         UserLlmSetting::query()->updateOrCreate(
             ['user_id' => $request->user()->id],
             [
                 'provider' => $data['provider'] ?? 'openai_compatible',
-                'api_key_encrypted' => Crypt::encryptString($data['api_key']),
+                'api_key_encrypted' => !empty($data['api_key'])
+                    ? Crypt::encryptString($data['api_key'])
+                    : ($existing?->api_key_encrypted),
                 'base_url' => $data['base_url'],
                 'default_model' => $data['default_model'],
                 'timeout' => $data['timeout'] ?? 30,
@@ -51,6 +55,28 @@ class LlmSettingController extends Controller
         );
 
         return response()->json(['message' => 'LLM settings saved']);
+    }
+
+    public function saveKey(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'api_key' => ['required', 'string', 'min:10', 'max:500'],
+        ]);
+
+        $existing = UserLlmSetting::query()->where('user_id', $request->user()->id)->first();
+
+        UserLlmSetting::query()->updateOrCreate(
+            ['user_id' => $request->user()->id],
+            [
+                'provider' => $existing?->provider ?? 'openai_compatible',
+                'api_key_encrypted' => Crypt::encryptString($validated['api_key']),
+                'base_url' => $existing?->base_url ?? config('services.llm.base_url'),
+                'default_model' => $existing?->default_model ?? config('services.llm.default_model'),
+                'timeout' => $existing?->timeout ?? (int) config('services.llm.timeout', 30),
+            ]
+        );
+
+        return response()->json(['message' => 'API key saved']);
     }
 
     public function models(Request $request): JsonResponse

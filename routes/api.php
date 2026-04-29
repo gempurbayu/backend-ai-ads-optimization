@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AnalysisController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\LlmSettingController;
+use App\Http\Controllers\Api\SalesPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -29,4 +30,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('settings/llm', [LlmSettingController::class, 'upsert']);
     Route::post('settings/llm/key', [LlmSettingController::class, 'saveKey']);
     Route::get('settings/llm/models', [LlmSettingController::class, 'models']);
+
+    Route::get('sales-pages', [SalesPageController::class, 'index']);
+    Route::post('sales-pages/generate', [SalesPageController::class, 'generate']);
+    Route::post('sales-pages/{salesPage}/regenerate', [SalesPageController::class, 'regenerate']);
+    Route::get('sales-pages/{salesPage}/export', [SalesPageController::class, 'export']);
+    Route::get('sales-pages/{salesPage}', [SalesPageController::class, 'show']);
+    Route::put('sales-pages/{salesPage}', [SalesPageController::class, 'update']);
+    Route::delete('sales-pages/{salesPage}', [SalesPageController::class, 'destroy']);
 });

@@ -6,23 +6,530 @@
         "version": "1.0.0"
     },
     "paths": {
-        "/api": {
-            "servers": [
-                {
-                    "url": "http://127.0.0.1:8000",
-                    "description": "Local development server"
-                }
-            ]
+        "/api/auth/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register user",
+                "operationId": "9601cba4e2c7581986654be7fec43694",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Jane Marketer"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "jane@company.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Register success"
+                    }
+                },
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login user",
+                "operationId": "8da4ff5c9423eda413c22206ba699f8c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login success"
+                    }
+                },
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
+        },
+        "/api/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get current user",
+                "operationId": "0c4f25918c71f84c185a8e19ef9f5bad",
+                "responses": {
+                    "200": {
+                        "description": "Current user"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout user",
+                "operationId": "1b82ad1e597f5616030a74cb6ab8e93d",
+                "responses": {
+                    "200": {
+                        "description": "Logout success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
+        },
+        "/api/campaigns": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "List campaigns",
+                "operationId": "dfaebbebd848d2c863d3699f9311019c",
+                "responses": {
+                    "200": {
+                        "description": "Campaign list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Create campaign",
+                "operationId": "a581913471d6a1a81878c0c8367743e4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "platform",
+                                    "impressions",
+                                    "clicks",
+                                    "conversions",
+                                    "cost",
+                                    "revenue",
+                                    "date_start",
+                                    "date_end"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Q2 Retargeting"
+                                    },
+                                    "platform": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Facebook",
+                                            "Google",
+                                            "TikTok"
+                                        ]
+                                    },
+                                    "impressions": {
+                                        "type": "integer",
+                                        "example": 120000
+                                    },
+                                    "clicks": {
+                                        "type": "integer",
+                                        "example": 2800
+                                    },
+                                    "conversions": {
+                                        "type": "integer",
+                                        "example": 140
+                                    },
+                                    "cost": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 18000000
+                                    },
+                                    "revenue": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 42000000
+                                    },
+                                    "date_start": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-04-01"
+                                    },
+                                    "date_end": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-04-30"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Campaign created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
+        },
+        "/api/campaigns/bulk": {
+            "post": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Bulk create campaigns",
+                "operationId": "35c59e62a4f6bc5ca091c529a16d4464",
+                "responses": {
+                    "201": {
+                        "description": "Bulk upload success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
+        },
+        "/api/campaigns/{campaign}": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Show campaign",
+                "operationId": "448c4a8a476df6bcff5d40b08deef23c",
+                "parameters": [
+                    {
+                        "name": "campaign",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Campaign detail"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Update campaign",
+                "operationId": "7762f7029c2d3d0806af92a2c876653d",
+                "parameters": [
+                    {
+                        "name": "campaign",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Campaign updated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Delete campaign",
+                "operationId": "ee099364f33b4dae7b34060ea436b9aa",
+                "parameters": [
+                    {
+                        "name": "campaign",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Campaign deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
+        },
+        "/api/analyses": {
+            "get": {
+                "tags": [
+                    "Analyses"
+                ],
+                "summary": "List analyses history",
+                "operationId": "aa0d692f185d2ecdde1b97224a00a3b5",
+                "responses": {
+                    "200": {
+                        "description": "Analysis list"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Analyses"
+                ],
+                "summary": "Generate analysis",
+                "operationId": "505a5e415f289749704f36de94dc92f0",
+                "responses": {
+                    "201": {
+                        "description": "Analysis created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
+        },
+        "/api/analyses/{analysis}": {
+            "get": {
+                "tags": [
+                    "Analyses"
+                ],
+                "summary": "Show analysis detail",
+                "operationId": "f16e3ba7a074450b7016b652865986d3",
+                "parameters": [
+                    {
+                        "name": "analysis",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Analysis detail"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Analyses"
+                ],
+                "summary": "Delete analysis",
+                "operationId": "a0d237360e34fea30f3ed34e092bd8d9",
+                "parameters": [
+                    {
+                        "name": "analysis",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Analysis deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ],
+                "servers": [
+                    {
+                        "url": "http://127.0.0.1:8000",
+                        "description": "Local development server"
+                    }
+                ]
+            }
         }
     },
     "components": {
         "securitySchemes": {
             "sanctum": {
                 "type": "http",
-                "description": "Use Sanctum bearer token from /api/auth/login",
                 "bearerFormat": "Token",
                 "scheme": "bearer"
             }
         }
-    }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Auth"
+        },
+        {
+            "name": "Campaigns",
+            "description": "Campaigns"
+        },
+        {
+            "name": "Analyses",
+            "description": "Analyses"
+        }
+    ]
 }

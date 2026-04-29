@@ -1,0 +1,28 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "AI Ads Optimization Advisor API",
+        "description": "REST API for authentication, campaign management, metrics, and AI analysis history.",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api": {
+            "servers": [
+                {
+                    "url": "http://127.0.0.1:8000",
+                    "description": "Local development server"
+                }
+            ]
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Use Sanctum bearer token from /api/auth/login",
+                "bearerFormat": "Token",
+                "scheme": "bearer"
+            }
+        }
+    }
+}

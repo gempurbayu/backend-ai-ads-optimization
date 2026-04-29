@@ -3,47 +3,67 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AnalysisRequest;
+use App\Models\Analysis;
+use App\Models\Campaign;
+use App\Services\AiAnalysisService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AnalysisController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(private readonly AiAnalysisService $aiAnalysisService)
     {
-        //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        //
+        $analyses = Analysis::query()
+            ->with('campaign:id,name,platform')
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->get();
+
+        return response()->json($analyses);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function store(AnalysisRequest $request): JsonResponse
     {
-        //
+        $campaign = Campaign::query()
+            ->where('id', $request->integer('campaign_id'))
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        $generated = $this->aiAnalysisService->generate(
+            campaign: $campaign,
+            focus: $request->input('focus')
+        );
+
+        $analysis = Analysis::query()->create([
+            'user_id' => $request->user()->id,
+            'campaign_id' => $campaign->id,
+            'result' => $generated['result'],
+            'summary' => $generated['summary'],
+            'action_items' => $generated['action_items'],
+            'meta' => $generated['meta'],
+        ]);
+
+        return response()->json($analysis->load('campaign:id,name,platform'), 201);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function show(Request $request, Analysis $analysis): JsonResponse
     {
-        //
+        abort_if($analysis->user_id !== $request->user()->id, 403);
+
+        return response()->json($analysis->load('campaign'));
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(Request $request, Analysis $analysis): JsonResponse
     {
-        //
+        abort_if($analysis->user_id !== $request->user()->id, 403);
+
+        $analysis->delete();
+
+        return response()->json(['message' => 'Analysis deleted']);
     }
 }

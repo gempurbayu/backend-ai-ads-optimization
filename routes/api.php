@@ -1,8 +1,26 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AnalysisController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CampaignController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+    });
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('campaigns', CampaignController::class);
+    Route::post('campaigns/bulk', [CampaignController::class, 'bulkStore']);
+
+    Route::get('analyses', [AnalysisController::class, 'index']);
+    Route::post('analyses', [AnalysisController::class, 'store']);
+    Route::get('analyses/{analysis}', [AnalysisController::class, 'show']);
+    Route::delete('analyses/{analysis}', [AnalysisController::class, 'destroy']);
+});
